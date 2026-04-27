@@ -1,26 +1,292 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: #2D2D2D;
+  --color-secondary: #8B7355;
+  --color-accent: #C9A96E;
+  --color-bg: #FAFAF8;
+  --color-bg-alt: #F3F0EB;
+  --color-text: #2D2D2D;
+  --color-text-light: #6B6B6B;
+  --color-border: #E5E0D8;
+  --font-serif: "Noto Serif SC", "Georgia", serif;
+  --font-sans: "Noto Sans SC", "Helvetica Neue", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration-reveal: 1.5s;
+  --duration-hero: 1.8s;
+  --stagger: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+}
+
+/* Full-page snap sections */
+main > section {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-height: 100dvh;
+}
+
+/* Vertically center sections with less content */
+main > section:is(#gallery, #details, #wedding-photos, #rsvp, #guestbook, #about-logo) {
+  display: flex;
+  flex-direction: column;
+}
+
+main > section:is(#gallery, #details, #wedding-photos, #rsvp, #guestbook, #about-logo)::before,
+main > section:is(#gallery, #details, #wedding-photos, #rsvp, #guestbook, #about-logo)::after {
+  content: '';
+  flex: 1;
+}
+
+main > section:is(#gallery, #details, #wedding-photos, #rsvp, #guestbook, #about-logo) > * {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+main > footer {
+  scroll-snap-align: end;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: white;
+}
+
+/* Scroll reveal system */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity var(--duration-reveal) var(--ease-out-expo),
+    transform var(--duration-reveal) var(--ease-out-expo);
+  transition-delay: calc(var(--stagger) * 200ms);
+}
+
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hero load animations */
+@keyframes hero-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-line-expand {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes hero-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.2; }
+}
+
+.hero-reveal {
+  opacity: 0;
+  animation: hero-reveal var(--duration-hero) var(--ease-out-expo) forwards;
+  animation-delay: calc(var(--stagger) * 280ms);
+}
+
+.hero-line {
+  transform: scaleX(0);
+  animation: hero-line-expand 1.5s var(--ease-out-expo) forwards;
+  animation-delay: calc(var(--stagger) * 280ms);
+}
+
+.hero-pulse {
+  animation: hero-pulse 4s ease-in-out infinite;
+}
+
+/* Lightbox */
+@keyframes lightbox-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes lightbox-content-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lightbox-backdrop {
+  animation: lightbox-backdrop-in 0.4s var(--ease-out-quart) forwards;
+}
+
+.lightbox-content {
+  opacity: 0;
+  animation: lightbox-content-in 0.5s var(--ease-out-expo) 0.1s forwards;
+}
+
+/* Music player */
+@keyframes gentle-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-gentle-spin {
+  animation: gentle-spin 4s linear infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes bounce-x {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+.animate-bounce-x {
+  animation: bounce-x 1.5s ease-in-out infinite;
+}
+
+/* Gallery auto-scroll */
+@keyframes gallery-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.gallery-canvas {
+  display: grid;
+  grid-template-rows: repeat(2, 1fr);
+  grid-auto-flow: column dense;
+  gap: 6px;
+  width: max-content;
+  animation: gallery-scroll var(--scroll-duration, 40s) linear infinite;
+}
+
+.gallery-canvas:hover {
+  animation-play-state: paused;
+}
+
+.gallery-tall {
+  grid-row: span 2;
+}
+
+.gallery-wide {
+  grid-column: span 1;
+}
+
+/* Map twinkle animation */
+@keyframes map-twinkle {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.map-twinkle {
+  animation: map-twinkle 3s ease-in-out infinite;
+}
+
+@keyframes map-venue-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.6); opacity: 0.1; }
+}
+
+.map-venue-pulse {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: map-venue-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes map-arc-draw {
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+.map-arc {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: map-arc-draw 4s ease-in-out infinite;
+}
+
+@keyframes map-arc-fly {
+  0% { offset-distance: 0%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+.map-arc-dot {
+  offset-rotate: 0deg;
+  animation: map-arc-fly 4s ease-in-out infinite;
+}
+
+/* Vertical scrolling wishes */
+@keyframes scroll-up {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+.danmaku-vertical {
+  animation: scroll-up var(--scroll-duration, 20s) linear infinite;
+}
+
+.danmaku-vertical:hover {
+  animation-play-state: paused;
+}
+
+/* Lightbox hint fade */
+@keyframes hint-fade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.lightbox-hint {
+  animation: hint-fade 3s ease-out forwards;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-snap-type: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .hero-reveal {
+    opacity: 1;
+    animation: none;
+  }
+  .hero-line {
+    transform: scaleX(1);
+    animation: none;
+  }
 }
