@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <footer className="py-12 px-6 bg-primary text-white/70 text-center">
       <div className="max-w-2xl mx-auto">
-        <p className="font-serif text-2xl text-white mb-2">李连宸 & 韩丹</p>
+        <p className="font-serif text-2xl text-white mb-2">李连宸 ♥️ <span style={{letterSpacing:'0.5em'}}>韩丹</span></p>
         <p className="text-sm mb-6">2026.06.05</p>
         <div className="h-px w-16 bg-white/20 mx-auto mb-6" />
         <p className="text-xs mb-2">
