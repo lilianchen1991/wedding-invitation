@@ -19,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="h-full antialiased">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `if('scrollRestoration' in history) history.scrollRestoration='manual'; window.addEventListener('beforeunload',function(){window.scrollTo(0,0)});` }} />
+        <script dangerouslySetInnerHTML={{ __html: `if('scrollRestoration' in history) history.scrollRestoration='manual';window.addEventListener('beforeunload',function(){window.scrollTo(0,0)});window.addEventListener('pagehide',function(){window.scrollTo(0,0)});window.addEventListener('pageshow',function(){window.scrollTo(0,0)});setTimeout(function(){window.scrollTo(0,0)},0);` }} />
       </head>
       <body className="min-h-full">{children}</body>
     </html>
