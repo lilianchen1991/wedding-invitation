@@ -18,6 +18,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" className="h-full antialiased">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `if('scrollRestoration' in history) history.scrollRestoration = 'manual'; window.scrollTo(0,0);` }} />
+      </head>
       <body className="min-h-full">{children}</body>
     </html>
   );
