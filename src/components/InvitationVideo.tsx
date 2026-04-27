@@ -8,6 +8,7 @@ export default function InvitationVideo() {
   const [ended, setEnded] = useState(false);
   const [showPause, setShowPause] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
@@ -18,6 +19,21 @@ export default function InvitationVideo() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting && videoRef.current && !videoRef.current.paused) {
+          videoRef.current.pause();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [videoUrl]);
 
   if (!videoUrl) return null;
 
@@ -65,7 +81,7 @@ export default function InvitationVideo() {
   };
 
   return (
-    <section className="relative bg-black flex items-center justify-center">
+    <section ref={sectionRef} className="relative bg-black flex items-center justify-center">
       <video
         ref={videoRef}
         src={videoUrl}
