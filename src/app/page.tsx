@@ -11,6 +11,7 @@ import ShareButton from "@/components/ShareButton";
 import InvitationVideo from "@/components/InvitationVideo";
 import AboutLogo from "@/components/AboutLogo";
 import Footer from "@/components/Footer";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
 
 export default function Home() {
   return (
@@ -28,6 +29,7 @@ export default function Home() {
       <AboutLogo />
       <WeddingPhotos />
       <Footer />
+      <AnalyticsTracker />
     </main>
   );
 }

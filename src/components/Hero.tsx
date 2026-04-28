@@ -10,18 +10,26 @@ declare global {
 }
 
 export default function Hero() {
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [bgType, setBgType] = useState<"video" | "image">("video");
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    fetch("/api/settings?key=hero_video")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.value) {
-          setVideoUrl(data.value);
-          const dir = data.value.substring(0, data.value.lastIndexOf("/"));
-          setPosterUrl(`${dir}/hero-poster.jpg`);
+    Promise.all([
+      fetch("/api/settings?key=hero_bg_type").then((r) => r.json()),
+      fetch("/api/settings?key=hero_video").then((r) => r.json()),
+    ])
+      .then(([typeData, mediaData]) => {
+        if (typeData.value === "image" || typeData.value === "video") {
+          setBgType(typeData.value);
+        }
+        if (mediaData.value) {
+          setMediaUrl(mediaData.value);
+          if (typeData.value !== "image") {
+            const dir = mediaData.value.substring(0, mediaData.value.lastIndexOf("/"));
+            setPosterUrl(`${dir}/hero-poster.jpg`);
+          }
         }
       })
       .catch(() => {});
@@ -34,7 +42,7 @@ export default function Hero() {
   }, []);
 
   useEffect(() => {
-    if (!videoUrl) return;
+    if (!mediaUrl || bgType !== "video") return;
 
     tryPlay();
 
@@ -53,23 +61,30 @@ export default function Hero() {
       document.removeEventListener("touchstart", tryPlay);
       window.removeEventListener("user-interaction", tryPlay);
     };
-  }, [videoUrl, tryPlay]);
+  }, [mediaUrl, bgType, tryPlay]);
 
   return (
     <section
       id="hero"
       className="relative min-h-screen flex flex-col items-center justify-center text-center text-white"
     >
-      {/* Video background with gradient fallback */}
+      {/* Background: gradient fallback → image or video */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#3a3a3a] via-[#5a5a5a] to-[#8a7a6a]" />
-      {posterUrl && (
+      {mediaUrl && bgType === "image" && (
+        <img
+          src={mediaUrl}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
+      {bgType === "video" && posterUrl && (
         <img
           src={posterUrl}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
         />
       )}
-      {videoUrl && (
+      {mediaUrl && bgType === "video" && (
         <video
           ref={videoRef}
           autoPlay
@@ -79,7 +94,7 @@ export default function Hero() {
           preload="auto"
           poster={posterUrl || undefined}
           className="absolute inset-0 w-full h-full object-cover"
-          src={videoUrl}
+          src={mediaUrl}
           webkit-playsinline="true"
           x5-playsinline="true"
           x5-video-player-type="h5-page"

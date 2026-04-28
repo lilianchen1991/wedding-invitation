@@ -21,12 +21,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "请求体为空" }, { status: 400 });
   }
 
-  const dir = getUploadDir("video");
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp4`;
-  const filepath = path.join(dir, filename);
+  let settingsKey = "invitation_video";
+  let detectedMime = "";
 
   try {
-    const fileWritten = await new Promise<boolean>((resolve, reject) => {
+    const { filepath, originalFilename } = await new Promise<{
+      filepath: string;
+      originalFilename: string;
+    }>((resolve, reject) => {
       const busboy = Busboy({
         headers: { "content-type": contentType },
         limits: { fileSize: 250 * 1024 * 1024 },
@@ -35,14 +37,31 @@ export async function POST(request: NextRequest) {
       let fileReceived = false;
       let writeFinished = false;
       let busboyFinished = false;
+      let savedPath = "";
+      let origName = "";
 
       const tryResolve = () => {
-        if (writeFinished && busboyFinished) resolve(true);
+        if (writeFinished && busboyFinished)
+          resolve({ filepath: savedPath, originalFilename: origName });
       };
+
+      busboy.on("field", (name, value) => {
+        if (name === "key") settingsKey = value;
+      });
 
       busboy.on("file", (_fieldname, stream, info) => {
         fileReceived = true;
-        const writable = fs.createWriteStream(filepath);
+        origName = info.filename || "";
+        detectedMime = info.mimeType || "";
+
+        const isImage = detectedMime.startsWith("image/");
+        const subdir = isImage ? "photos" : "video";
+        const dir = getUploadDir(subdir);
+        const ext = path.extname(origName) || (isImage ? ".jpg" : ".mp4");
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+        savedPath = path.join(dir, filename);
+
+        const writable = fs.createWriteStream(savedPath);
 
         stream.on("limit", () => {
           writable.destroy();
@@ -61,7 +80,7 @@ export async function POST(request: NextRequest) {
       busboy.on("finish", () => {
         busboyFinished = true;
         if (!fileReceived) {
-          resolve(false);
+          reject(new Error("未收到文件"));
         } else {
           tryResolve();
         }
@@ -73,26 +92,29 @@ export async function POST(request: NextRequest) {
       nodeStream.pipe(busboy);
     });
 
-    if (!fileWritten || !fs.existsSync(filepath)) {
+    if (!fs.existsSync(filepath)) {
       return NextResponse.json({ error: "未收到文件" }, { status: 400 });
     }
 
+    const isImage = detectedMime.startsWith("image/");
+    const subdir = isImage ? "photos" : "video";
+    const basename = path.basename(filepath);
+    const url = `/uploads/${subdir}/${basename}`;
+
     const db = getDb();
-    const key = "invitation_video";
-    const old = db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as
+    const old = db.prepare("SELECT value FROM settings WHERE key = ?").get(settingsKey) as
       | { value: string }
       | undefined;
     if (old?.value) {
       deleteFile(old.value);
     }
 
-    const url = `/uploads/video/${filename}`;
-    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?")
-      .run(key, url, url);
+    db.prepare(
+      "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?"
+    ).run(settingsKey, url, url);
 
     return NextResponse.json({ url });
   } catch (e) {
-    if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
     const msg = e instanceof Error ? e.message : "上传处理失败";
     return NextResponse.json({ error: msg }, { status: 500 });
   }

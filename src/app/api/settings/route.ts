@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
     deleteFile(old.value);
   }
 
-  const url = await saveFile(file, "video");
+  const isImage = file.type.startsWith("image/");
+  const url = await saveFile(file, isImage ? "photos" : "video");
   db.prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?")
     .run(key, url, url);
 

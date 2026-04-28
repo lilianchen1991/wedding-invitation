@@ -68,6 +68,22 @@ function initTables(db: Database.Database) {
       last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(type, city)
     );
+
+    CREATE TABLE IF NOT EXISTS page_views (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      ip TEXT,
+      city TEXT,
+      province TEXT,
+      user_agent TEXT,
+      referrer TEXT,
+      entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      duration INTEGER DEFAULT 0,
+      page_path TEXT DEFAULT '/'
+    );
+    CREATE INDEX IF NOT EXISTS idx_pv_entered ON page_views(entered_at);
+    CREATE INDEX IF NOT EXISTS idx_pv_ip ON page_views(ip);
+    CREATE INDEX IF NOT EXISTS idx_pv_session ON page_views(session_id);
   `);
 
   const cols = db.prepare("PRAGMA table_info(wishes)").all() as { name: string }[];

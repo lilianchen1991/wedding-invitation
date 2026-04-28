@@ -14,6 +14,19 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-04-28",
+    title: "管理后台数据看板",
+    items: [
+      "仪表盘新增数据统计模块，实时展示页面访问数据",
+      "统计指标：累计 PV/UV、今日 PV/UV、平均停留时长、人均访问次数",
+      "最近 14 天 PV/UV 趋势柱状图（纯 SVG，零依赖）",
+      "Top 10 访问城市排行 + 设备分布（手机/电脑/平板）",
+      "最近 20 条访问记录表格（时间、IP 掩码、城市、设备、停留时长）",
+      "轻量客户端埋点：visibilitychange + sendBeacon 精准记录停留时长",
+      "IP 自动定位城市，全量存储、掩码展示保护隐私",
+    ],
+  },
+  {
     date: "2026-04-27",
     title: "祝福地图点亮功能",
     items: [
