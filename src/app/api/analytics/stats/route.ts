@@ -97,7 +97,7 @@ export async function GET() {
   const recentVisits = recentRows.map((r) => ({
     ip: maskIp(r.ip),
     city: r.city || "",
-    enteredAt: r.enteredAt,
+    enteredAt: r.enteredAt.replace(" ", "T") + "Z",
     duration: r.duration,
     device: detectDevice(r.userAgent || ""),
   }));
