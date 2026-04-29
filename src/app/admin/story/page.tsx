@@ -33,7 +33,7 @@ export default function AdminStory() {
     form.append("file", files[0]);
     form.append("key", key);
 
-    const res = await fetch("/api/settings", { method: "POST", body: form });
+    const res = await fetch("/api/upload-video", { method: "POST", body: form });
     if (res.ok) {
       const data = await res.json();
       setPhotos((prev) => ({ ...prev, [key]: data.url }));
