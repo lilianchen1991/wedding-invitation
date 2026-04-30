@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Countdown from "./Countdown";
+import { useSiteConfig } from "@/contexts/SiteConfigContext";
 
 declare global {
   interface Window {
@@ -10,10 +11,24 @@ declare global {
 }
 
 export default function Hero() {
+  const config = useSiteConfig();
   const [bgType, setBgType] = useState<"video" | "image">("video");
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const groomName = config?.groom_name || "";
+  const brideName = config?.bride_name || "";
+  const weddingDate = config?.wedding_date || "";
+
+  const dateDisplay = weddingDate
+    ? (() => {
+        const d = new Date(weddingDate + "T00:00:00+08:00");
+        const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+        return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${weekdays[d.getDay()]}`;
+      })()
+    : "";
+  const countdownTarget = weddingDate ? `${weddingDate}T00:00:00+08:00` : "";
 
   useEffect(() => {
     Promise.all([
@@ -112,12 +127,14 @@ export default function Hero() {
           We&apos;re Getting Married
         </p>
 
+        {groomName && (
         <h1
           className="font-serif text-5xl md:text-7xl font-semibold mb-2 hero-reveal"
           style={{ "--stagger": 1 } as React.CSSProperties}
         >
-          李连宸
+          {groomName}
         </h1>
+        )}
 
         <div
           className="flex items-center justify-center gap-4 my-4 hero-reveal"
@@ -134,25 +151,27 @@ export default function Hero() {
           />
         </div>
 
+        {brideName && (
         <h1
           className="font-serif text-5xl md:text-7xl font-semibold mb-8 hero-reveal"
           style={{ "--stagger": 3 } as React.CSSProperties}
         >
-          韩丹
+          {brideName}
         </h1>
+        )}
 
         <p
           className="text-lg text-white/80 tracking-wide mb-12 hero-reveal"
           style={{ "--stagger": 4 } as React.CSSProperties}
         >
-          2026 年 6 月 5 日 · 星期五
+          {dateDisplay}
         </p>
 
         <div
           className="hero-reveal"
           style={{ "--stagger": 5 } as React.CSSProperties}
         >
-          <Countdown targetDate="2026-06-05T11:00:00+08:00" />
+          {countdownTarget && <Countdown targetDate={countdownTarget} />}
         </div>
 
         <div

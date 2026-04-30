@@ -10,6 +10,19 @@ function isWeChat() {
 export default function ShareButton() {
   const [showGuide, setShowGuide] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [names, setNames] = useState({ groom: "", bride: "", date: "" });
+
+  useEffect(() => {
+    fetch("/api/settings?key=groom_name,bride_name,wedding_date")
+      .then((r) => r.json())
+      .then((data: { key: string; value: string }[]) => {
+        if (!Array.isArray(data)) return;
+        const map: Record<string, string> = {};
+        data.forEach((i) => { map[i.key] = i.value; });
+        setNames({ groom: map.groom_name || "", bride: map.bride_name || "", date: map.wedding_date || "" });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (copied) {
@@ -24,9 +37,11 @@ export default function ShareButton() {
       return;
     }
 
+    const title = names.groom && names.bride ? `${names.groom} & ${names.bride} | 婚礼邀请` : "婚礼邀请";
+    const text = names.date ? `我们诚挚地邀请您参加我们的婚礼 — ${names.date}` : "我们诚挚地邀请您参加我们的婚礼";
     const shareData = {
-      title: "李连宸 & 韩丹 | 婚礼邀请",
-      text: "我们诚挚地邀请您参加我们的婚礼 — 2026年6月5日",
+      title,
+      text,
       url: window.location.origin,
     };
 
@@ -45,7 +60,7 @@ export default function ShareButton() {
     } catch {
       // fallback
     }
-  }, []);
+  }, [names]);
 
   return (
     <>

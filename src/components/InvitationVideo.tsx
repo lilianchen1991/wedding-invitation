@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 
 export default function InvitationVideo() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [posterUrl, setPosterUrl] = useState<string | null>(null);
+  const [started, setStarted] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [ended, setEnded] = useState(false);
   const [showPause, setShowPause] = useState(false);
@@ -12,10 +14,17 @@ export default function InvitationVideo() {
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    fetch("/api/settings?key=invitation_video")
+    fetch("/api/settings?key=invitation_video,invitation_video_poster")
       .then((r) => r.json())
       .then((data) => {
-        if (data.value) setVideoUrl(data.value);
+        if (Array.isArray(data)) {
+          const map: Record<string, string> = {};
+          data.forEach((item: { key: string; value: string }) => { map[item.key] = item.value; });
+          if (map.invitation_video) setVideoUrl(map.invitation_video);
+          if (map.invitation_video_poster) setPosterUrl(map.invitation_video_poster);
+        } else if (data.value) {
+          setVideoUrl(data.value);
+        }
       })
       .catch(() => {});
   }, []);
@@ -42,7 +51,10 @@ export default function InvitationVideo() {
   };
 
   const handlePlay = () => {
-    videoRef.current?.play();
+    const video = videoRef.current;
+    if (!video) return;
+    if (ended) video.currentTime = 0;
+    video.play();
     setEnded(false);
   };
 
@@ -59,6 +71,7 @@ export default function InvitationVideo() {
   };
 
   const handleVideoPlay = () => {
+    setStarted(true);
     setPlaying(true);
     setEnded(false);
     setShowPause(false);
@@ -80,26 +93,59 @@ export default function InvitationVideo() {
     window.dispatchEvent(new Event("invitation-video-stop"));
   };
 
+  const handleFullscreen = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.requestFullscreen) {
+      video.requestFullscreen();
+    } else if ((video as unknown as { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen) {
+      (video as unknown as { webkitEnterFullscreen: () => void }).webkitEnterFullscreen();
+    }
+  };
+
+  const showPoster = posterUrl && !started;
+
   return (
-    <section ref={sectionRef} className="relative bg-black flex items-center justify-center">
+    <section ref={sectionRef} className="relative bg-black h-[100dvh] overflow-hidden">
+      {/* Blurred poster background - only before first play */}
+      {showPoster && (
+        <img
+          src={posterUrl}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+        />
+      )}
+
+      {/* Poster image - only shown before first play */}
+      {showPoster && (
+        <img
+          src={posterUrl}
+          alt="视频封面"
+          className="absolute inset-0 w-full h-full object-contain portrait:object-cover z-10"
+        />
+      )}
+
+      {/* Main video */}
       <video
         ref={videoRef}
-        src={videoUrl}
+        src={posterUrl ? videoUrl : `${videoUrl}#t=0.001`}
         playsInline
         webkit-playsinline="true"
         x5-playsinline="true"
         x5-video-player-type="h5-page"
         x5-video-player-fullscreen="false"
         preload="metadata"
-        className="w-full h-full object-contain max-h-[100dvh]"
+        className={`absolute inset-0 w-full h-full object-contain z-10 ${showPoster ? "opacity-0" : ""}`}
         onPlay={handleVideoPlay}
         onPause={handleVideoPause}
         onEnded={handleVideoEnded}
       />
 
+      {/* Play/pause overlay */}
       <button
         onClick={playing ? handleTap : handlePlay}
-        className={`absolute inset-0 flex items-center justify-center transition-colors ${
+        className={`absolute inset-0 z-20 flex items-center justify-center transition-colors ${
           playing && !showPause ? "" : "bg-black/30"
         }`}
       >
@@ -121,6 +167,18 @@ export default function InvitationVideo() {
           </div>
         )}
       </button>
+
+      {/* Fullscreen button - always visible once started */}
+      {started && (
+        <button
+          onClick={(e) => { e.stopPropagation(); handleFullscreen(); }}
+          className="absolute bottom-6 left-6 z-30 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center hover:bg-white/30 transition-colors"
+        >
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4" />
+          </svg>
+        </button>
+      )}
     </section>
   );
 }

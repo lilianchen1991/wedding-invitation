@@ -17,6 +17,9 @@ export default function Guestbook() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [mapKey, setMapKey] = useState(0);
+  const [qrcodeUrl, setQrcodeUrl] = useState<string | null>(null);
+  const [qrcodeText, setQrcodeText] = useState<string>("");
+  const [showQrModal, setShowQrModal] = useState(false);
   const { ref: sectionRef, inView: sectionInView } = useInView();
 
   useEffect(() => {
@@ -31,6 +34,20 @@ export default function Guestbook() {
       sessionStorage.setItem("map-visited", "1");
       fetch("/api/map/visit", { method: "POST" }).catch(() => {});
     }
+
+    fetch("/api/settings?key=payment_qrcode,payment_qrcode_text")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          data.forEach((item: { key: string; value: string }) => {
+            if (item.key === "payment_qrcode") setQrcodeUrl(item.value);
+            if (item.key === "payment_qrcode_text") setQrcodeText(item.value);
+          });
+        } else if (data.value) {
+          setQrcodeUrl(data.value);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -105,13 +122,24 @@ export default function Guestbook() {
               required
             />
           </div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-3 bg-accent text-white px-6 py-3 text-sm tracking-widest hover:bg-accent/90 transition-colors disabled:opacity-50"
-          >
-            {submitting ? "发送中..." : "发送祝福"}
-          </button>
+          <div className="mt-3 flex gap-3">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="bg-accent text-white px-6 py-3 text-sm tracking-widest hover:bg-accent/90 transition-colors disabled:opacity-50"
+            >
+              {submitting ? "发送中..." : "发送祝福"}
+            </button>
+            {qrcodeUrl && (
+              <button
+                type="button"
+                onClick={() => setShowQrModal(true)}
+                className="border border-accent text-accent px-6 py-3 text-sm tracking-widest hover:bg-accent hover:text-white transition-colors"
+              >
+                发个红包
+              </button>
+            )}
+          </div>
         </form>
 
         {wishes.length > 0 && (
@@ -140,6 +168,33 @@ export default function Guestbook() {
           </div>
         )}
       </div>
+
+      {showQrModal && qrcodeUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowQrModal(false)}
+          />
+          <div className="relative bg-white rounded-lg p-6 mx-4 max-w-sm w-full z-10">
+            <button
+              className="absolute top-3 right-3 text-text-light hover:text-primary transition-colors z-10"
+              onClick={() => setShowQrModal(false)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="font-serif text-lg text-primary text-center mb-2">发个红包</h3>
+            {qrcodeText && <p className="text-sm text-text-light text-center mb-4">{qrcodeText}</p>}
+            <img
+              src={qrcodeUrl}
+              alt="微信收款码"
+              className="w-full h-auto"
+            />
+            <p className="text-xs text-text-light text-center mt-3">长按图片识别二维码</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

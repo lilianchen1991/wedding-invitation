@@ -57,6 +57,17 @@ function initTables(db: Database.Database) {
       value TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS milestones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      link TEXT DEFAULT NULL,
+      photo TEXT DEFAULT NULL,
+      sort_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS map_locations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       type TEXT NOT NULL CHECK(type IN ('wish', 'visit', 'rsvp')),
@@ -85,6 +96,12 @@ function initTables(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_pv_ip ON page_views(ip);
     CREATE INDEX IF NOT EXISTS idx_pv_session ON page_views(session_id);
   `);
+
+  // Migrate milestones: photo_key -> photo
+  const msCols = db.prepare("PRAGMA table_info(milestones)").all() as { name: string }[];
+  if (msCols.some((c) => c.name === "photo_key") && !msCols.some((c) => c.name === "photo")) {
+    db.exec("ALTER TABLE milestones RENAME COLUMN photo_key TO photo");
+  }
 
   const cols = db.prepare("PRAGMA table_info(wishes)").all() as { name: string }[];
   if (!cols.some((c) => c.name === "city")) {

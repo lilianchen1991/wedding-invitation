@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { isAdmin } from "@/lib/auth";
 import { getClientIp, geolocateIp } from "@/lib/geo";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
   const db = getDb();
@@ -21,6 +22,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit(ip, 60_000, 3)) {
+    return NextResponse.json({ error: "请求过于频繁，请稍后再试" }, { status: 429 });
+  }
+
   const { name, message } = await request.json();
 
   if (!name?.trim() || !message?.trim()) {
@@ -32,19 +38,21 @@ export async function POST(request: NextRequest) {
     .prepare("INSERT INTO wishes (name, message) VALUES (?, ?)")
     .run(name.trim(), message.trim());
 
-  const ip = getClientIp(request);
-  if (ip) {
-    geolocateIp(ip).then((geo) => {
-      if (!geo) return;
-      db.prepare("UPDATE wishes SET city = ? WHERE id = ?").run(geo.city, result.lastInsertRowid);
-      db.prepare(
-        `INSERT INTO map_locations (type, city, province, lat, lng)
-         VALUES ('wish', ?, ?, ?, ?)
-         ON CONFLICT(type, city) DO UPDATE SET
-           count = count + 1,
-           last_seen = CURRENT_TIMESTAMP`
-      ).run(geo.city, geo.province, geo.lat, geo.lng);
-    }).catch(() => {});
+  const clientIp = getClientIp(request);
+  if (clientIp) {
+    try {
+      const geo = await geolocateIp(clientIp);
+      if (geo) {
+        db.prepare("UPDATE wishes SET city = ? WHERE id = ?").run(geo.city, result.lastInsertRowid);
+        db.prepare(
+          `INSERT INTO map_locations (type, city, province, lat, lng)
+           VALUES ('wish', ?, ?, ?, ?)
+           ON CONFLICT(type, city) DO UPDATE SET
+             count = count + 1,
+             last_seen = CURRENT_TIMESTAMP`
+        ).run(geo.city, geo.province, geo.lat, geo.lng);
+      }
+    } catch {}
   }
 
   return NextResponse.json({

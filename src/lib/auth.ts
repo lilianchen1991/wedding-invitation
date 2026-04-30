@@ -1,26 +1,66 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getDb } from "./db";
 
-const JWT_SECRET = process.env.JWT_SECRET || "wedding-admin-secret-change-me";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const COOKIE_NAME = "admin_token";
 
-export async function verifyPassword(password: string): Promise<boolean> {
-  if (ADMIN_PASSWORD.startsWith("$2a$") || ADMIN_PASSWORD.startsWith("$2b$")) {
-    return bcrypt.compare(password, ADMIN_PASSWORD);
+function getSettingValue(key: string): string | null {
+  const db = getDb();
+  const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
+  return row?.value ?? null;
+}
+
+function setSettingValue(key: string, value: string) {
+  const db = getDb();
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(key, value);
+}
+
+function getJwtSecret(): string {
+  let secret = getSettingValue("jwt_secret");
+  if (!secret) {
+    secret = crypto.randomBytes(32).toString("hex");
+    setSettingValue("jwt_secret", secret);
   }
-  return password === ADMIN_PASSWORD;
+  return secret;
+}
+
+function getPasswordHash(): string {
+  let hash = getSettingValue("admin_password_hash");
+  if (!hash) {
+    hash = bcrypt.hashSync("admin", 10);
+    setSettingValue("admin_password_hash", hash);
+  }
+  return hash;
+}
+
+export async function verifyPassword(password: string): Promise<boolean> {
+  const hash = getPasswordHash();
+  return bcrypt.compare(password, hash);
+}
+
+export async function isDefaultPassword(): Promise<boolean> {
+  const hash = getPasswordHash();
+  return bcrypt.compare("admin", hash);
+}
+
+export async function changePassword(oldPassword: string, newPassword: string): Promise<boolean> {
+  const valid = await verifyPassword(oldPassword);
+  if (!valid) return false;
+  const hash = await bcrypt.hash(newPassword, 10);
+  setSettingValue("admin_password_hash", hash);
+  return true;
 }
 
 export function signToken(): string {
-  return jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ role: "admin" }, getJwtSecret(), { expiresIn: "7d" });
 }
 
 export function verifyToken(token: string): { role: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { role: string };
+    return jwt.verify(token, getJwtSecret()) as { role: string };
   } catch {
     return null;
   }

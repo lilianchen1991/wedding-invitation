@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Logo from "./Logo";
+import { useSiteConfig } from "@/contexts/SiteConfigContext";
 
-const NAV_ITEMS = [
+const ALL_navItems = [
   { label: "首页", href: "#hero" },
   { label: "我们的故事", href: "#story" },
   { label: "相册", href: "#gallery" },
@@ -15,8 +15,17 @@ const NAV_ITEMS = [
 ];
 
 export default function Navigation() {
+  const config = useSiteConfig();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const logoImage = config?.logo_image || null;
+
+  const hiddenSections = new Set<string>();
+  if (config) {
+    if (!config.milestones || config.milestones.length === 0) hiddenSections.add("#story");
+    if (!config.logo_image && !config.logo_title && !config.logo_desc) hiddenSections.add("#about-logo");
+  }
+  const navItems = ALL_navItems.filter((item) => !hiddenSections.has(item.href));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -39,12 +48,20 @@ export default function Navigation() {
             scrolled ? "text-primary" : "text-white"
           }`}
         >
-          <Logo className="h-9" />
+          {logoImage && (
+            <img
+              src={logoImage}
+              alt="Logo"
+              className={`h-9 object-contain transition-all duration-300 ${
+                scrolled ? "" : "brightness-0 invert"
+              }`}
+            />
+          )}
         </a>
 
         {/* Desktop nav */}
         <div className="hidden md:flex gap-8">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <a
               key={item.href}
               href={item.href}
@@ -79,7 +96,7 @@ export default function Navigation() {
       {menuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-border">
           <div className="px-6 py-4 flex flex-col gap-4">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <a
                 key={item.href}
                 href={item.href}

@@ -19,6 +19,25 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(music);
 }
 
+export async function DELETE(request: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "缺少 id" }, { status: 400 });
+  }
+
+  const db = getDb();
+  const music = db.prepare("SELECT url FROM music WHERE id = ?").get(id) as { url: string } | undefined;
+  if (music?.url) {
+    const { deleteFile } = await import("@/lib/upload");
+    deleteFile(music.url);
+  }
+  db.prepare("DELETE FROM music WHERE id = ?").run(id);
+  return NextResponse.json({ success: true });
+}
+
 export async function POST(request: NextRequest) {
   const denied = await requireAdmin();
   if (denied) return denied;

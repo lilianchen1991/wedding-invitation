@@ -4,14 +4,26 @@ import { useEffect, useState, useRef } from "react";
 
 export default function AdminInvitationVideo() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [posterUploading, setPosterUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const posterRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/settings?key=invitation_video")
+    fetch("/api/settings?key=invitation_video,invitation_video_poster")
       .then((r) => r.json())
-      .then((data) => setVideoUrl(data.value));
+      .then((data) => {
+        if (Array.isArray(data)) {
+          data.forEach((item: { key: string; value: string }) => {
+            if (item.key === "invitation_video") setVideoUrl(item.value);
+            if (item.key === "invitation_video_poster") setPosterUrl(item.value);
+          });
+        } else if (data.value) {
+          setVideoUrl(data.value);
+        }
+      });
   }, []);
 
   const handleUpload = (files: FileList | null) => {
@@ -70,6 +82,42 @@ export default function AdminInvitationVideo() {
       body: JSON.stringify({ key: "invitation_video", value: "" }),
     });
     setVideoUrl(null);
+  };
+
+  const handlePosterUpload = async (files: FileList | null) => {
+    if (!files || !files[0]) return;
+    const file = files[0];
+    if (!file.type.startsWith("image/")) {
+      alert("请选择图片文件");
+      return;
+    }
+    setPosterUploading(true);
+    const form = new FormData();
+    form.append("file", file);
+    form.append("key", "invitation_video_poster");
+    try {
+      const res = await fetch("/api/settings", { method: "POST", body: form });
+      if (res.ok) {
+        const data = await res.json();
+        setPosterUrl(data.url);
+      } else {
+        alert("上传失败");
+      }
+    } catch {
+      alert("上传失败");
+    }
+    setPosterUploading(false);
+    if (posterRef.current) posterRef.current.value = "";
+  };
+
+  const handlePosterRemove = async () => {
+    if (!confirm("确定移除视频封面图？")) return;
+    await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "invitation_video_poster", value: "" }),
+    });
+    setPosterUrl(null);
   };
 
   const fileSizeText = (bytes: number) => {
@@ -148,6 +196,54 @@ export default function AdminInvitationVideo() {
               disabled={uploading}
             />
           </label>
+        </div>
+      )}
+
+      {videoUrl && (
+        <div className="mt-10 pt-8 border-t border-border">
+          <h2 className="font-serif text-lg text-primary mb-2">视频封面图</h2>
+          <p className="text-sm text-text-light mb-4">
+            用于 iOS 微信等不支持自动加载视频首帧的环境。未设置时视频区域可能显示黑屏。
+          </p>
+
+          {posterUrl ? (
+            <div className="space-y-4">
+              <div className="border border-border overflow-hidden inline-block">
+                <img src={posterUrl} alt="视频封面" className="max-w-xs h-auto" />
+              </div>
+              <div className="flex gap-3">
+                <label className="cursor-pointer bg-accent text-white px-4 py-2 text-sm tracking-wide hover:bg-accent/90 transition-colors">
+                  {posterUploading ? "上传中..." : "更换封面"}
+                  <input
+                    ref={posterRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handlePosterUpload(e.target.files)}
+                    disabled={posterUploading}
+                  />
+                </label>
+                <button
+                  onClick={handlePosterRemove}
+                  className="border border-border px-4 py-2 text-sm text-text-light hover:text-red-500 hover:border-red-300 transition-colors"
+                >
+                  移除封面
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className="cursor-pointer inline-block bg-accent text-white px-6 py-2.5 text-sm tracking-wide hover:bg-accent/90 transition-colors">
+              {posterUploading ? "上传中..." : "上传封面图"}
+              <input
+                ref={posterRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handlePosterUpload(e.target.files)}
+                disabled={posterUploading}
+              />
+            </label>
+          )}
         </div>
       )}
     </div>

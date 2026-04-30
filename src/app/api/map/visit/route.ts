@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getClientIp, geolocateIp } from "@/lib/geo";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit(clientIp, 60_000, 3)) {
+    return NextResponse.json({ skipped: true });
+  }
+
   const ip = getClientIp(request);
   if (!ip) return NextResponse.json({ skipped: true });
 

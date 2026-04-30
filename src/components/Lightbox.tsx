@@ -164,10 +164,8 @@ export default function Lightbox({ photos, index, onClose, onChangeIndex }: Ligh
         const dy = e.changedTouches[0].clientY - s.startY;
         const dx = e.changedTouches[0].clientX - s.startX;
         if (dy > 120 && Math.abs(dy) > Math.abs(dx) * 1.5) {
-          setScale(1);
-          setTranslate({ x: 0, y: 0 });
           setDismissing(true);
-          setDismissY(window.innerHeight);
+          setTranslate({ x: translate.x, y: translate.y + window.innerHeight });
           setBgOpacity(0);
           setTimeout(onClose, 300);
           s.mode = "";

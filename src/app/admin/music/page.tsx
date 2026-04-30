@@ -46,6 +46,17 @@ export default function AdminMusic() {
     load();
   };
 
+  const handleDelete = async (id: number, title: string) => {
+    if (!confirm(`确定删除「${title || "未命名"}」？`)) return;
+    const res = await fetch(`/api/music?id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      load();
+    } else {
+      const data = await res.json();
+      alert(data.error || "删除失败");
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -86,6 +97,12 @@ export default function AdminMusic() {
                     设为播放
                   </button>
                 )}
+                <button
+                  onClick={() => handleDelete(music.id, music.title)}
+                  className="text-xs text-text-light hover:text-red-500 transition-colors"
+                >
+                  删除
+                </button>
               </div>
             </div>
           ))}

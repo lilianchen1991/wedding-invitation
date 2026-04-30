@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import OurStory from "@/components/OurStory";
@@ -12,24 +14,27 @@ import InvitationVideo from "@/components/InvitationVideo";
 import AboutLogo from "@/components/AboutLogo";
 import Footer from "@/components/Footer";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
+import { SiteConfigProvider } from "@/contexts/SiteConfigContext";
 
 export default function Home() {
   return (
-    <main>
-      <Navigation />
-      <Hero />
-      <OurStory />
-      <InvitationVideo />
-      <Gallery />
-      <WeddingDetails />
-      <RSVP />
-      <Guestbook />
-      <ShareButton />
-      <MusicPlayer />
-      <AboutLogo />
-      <WeddingPhotos />
-      <Footer />
-      <AnalyticsTracker />
-    </main>
+    <SiteConfigProvider>
+      <main>
+        <Navigation />
+        <Hero />
+        <OurStory />
+        <InvitationVideo />
+        <Gallery />
+        <WeddingDetails />
+        <RSVP />
+        <Guestbook />
+        <ShareButton />
+        <MusicPlayer />
+        <AboutLogo />
+        <WeddingPhotos />
+        <Footer />
+        <AnalyticsTracker />
+      </main>
+    </SiteConfigProvider>
   );
 }

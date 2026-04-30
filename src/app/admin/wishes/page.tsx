@@ -55,7 +55,7 @@ export default function AdminWishes() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-sm text-primary">{wish.name}</span>
                     <span className="text-xs text-text-light">
-                      {new Date(wish.created_at).toLocaleString("zh-CN")}
+                      {new Date(wish.created_at.endsWith("Z") ? wish.created_at : wish.created_at + "Z").toLocaleString("zh-CN")}
                     </span>
                     {!wish.visible && (
                       <span className="text-xs text-orange-500">已隐藏</span>

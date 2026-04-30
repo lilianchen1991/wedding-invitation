@@ -47,3 +47,6 @@ data.db-shm
 
 # uploads
 /public/uploads/
+
+# deploy script (contains server credentials)
+deploy.sh

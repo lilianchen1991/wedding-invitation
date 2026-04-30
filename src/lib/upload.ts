@@ -16,13 +16,8 @@ export async function saveFile(file: File, subdir: string): Promise<string> {
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
   const filepath = path.join(dir, filename);
 
-  const stream = file.stream() as unknown as NodeJS.ReadableStream;
-  const writable = fs.createWriteStream(filepath);
-  await new Promise<void>((resolve, reject) => {
-    stream.pipe(writable);
-    writable.on("finish", resolve);
-    writable.on("error", reject);
-  });
+  const buffer = Buffer.from(await file.arrayBuffer());
+  fs.writeFileSync(filepath, buffer);
 
   return `/uploads/${subdir}/${filename}`;
 }

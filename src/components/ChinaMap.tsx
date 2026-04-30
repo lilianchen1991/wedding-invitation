@@ -23,15 +23,31 @@ interface MapData {
   rsvps: MapDot[];
 }
 
-const VENUE = { lat: 44.57, lng: 129.38, city: "海林" };
+const DEFAULT_VENUE = { lat: 44.57, lng: 129.38, city: "婚礼地点" };
 
 export default function ChinaMap({ refreshKey }: { refreshKey?: number }) {
   const [data, setData] = useState<MapData | null>(null);
+  const [venue, setVenue] = useState(DEFAULT_VENUE);
 
   useEffect(() => {
     fetch("/api/map")
       .then((r) => r.json())
       .then(setData)
+      .catch(() => {});
+    fetch("/api/settings?key=venue_lat,venue_lng,venue_city")
+      .then((r) => r.json())
+      .then((items: { key: string; value: string }[]) => {
+        if (!Array.isArray(items)) return;
+        const map: Record<string, string> = {};
+        items.forEach((i) => { map[i.key] = i.value; });
+        if (map.venue_lat && map.venue_lng) {
+          setVenue({
+            lat: parseFloat(map.venue_lat),
+            lng: parseFloat(map.venue_lng),
+            city: map.venue_city || "婚礼地点",
+          });
+        }
+      })
       .catch(() => {});
   }, [refreshKey]);
 
@@ -48,7 +64,7 @@ export default function ChinaMap({ refreshKey }: { refreshKey?: number }) {
       type: "wish" | "visit" | "rsvp";
     }[] = [];
 
-    data.visits.filter((d) => d.city !== VENUE.city).forEach((d, i) => {
+    data.visits.filter((d) => d.city !== venue.city).forEach((d, i) => {
       const { x, y } = geoToSvg(d.lat, d.lng);
       const r = 0.18 + Math.log2(1 + d.count) * 0.08;
       items.push({
@@ -60,7 +76,7 @@ export default function ChinaMap({ refreshKey }: { refreshKey?: number }) {
       });
     });
 
-    data.wishes.filter((d) => d.city !== VENUE.city).forEach((d, i) => {
+    data.wishes.filter((d) => d.city !== venue.city).forEach((d, i) => {
       const { x, y } = geoToSvg(d.lat, d.lng);
       const r = 0.22 + Math.log2(1 + d.count) * 0.12;
       items.push({
@@ -72,7 +88,7 @@ export default function ChinaMap({ refreshKey }: { refreshKey?: number }) {
       });
     });
 
-    data.rsvps.filter((d) => d.city !== VENUE.city).forEach((d, i) => {
+    data.rsvps.filter((d) => d.city !== venue.city).forEach((d, i) => {
       const { x, y } = geoToSvg(d.lat, d.lng);
       const r = 0.22 + Math.log2(1 + d.count) * 0.12;
       items.push({
@@ -89,7 +105,7 @@ export default function ChinaMap({ refreshKey }: { refreshKey?: number }) {
 
   const rsvpDots = dots.filter((d) => d.type === "rsvp");
   const hasDataDots = dots.length > 0;
-  const venuePos = geoToSvg(VENUE.lat, VENUE.lng);
+  const venuePos = geoToSvg(venue.lat, venue.lng);
 
   const arcs = useMemo(() => {
     return rsvpDots

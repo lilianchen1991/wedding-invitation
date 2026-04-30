@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useInView } from "@/hooks/useInView";
+import Lightbox from "./Lightbox";
 
 interface Photo {
   id: number;
@@ -13,7 +14,6 @@ interface Photo {
 export default function WeddingPhotos() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [lightbox, setLightbox] = useState<number | null>(null);
-  const [closing, setClosing] = useState(false);
   const { ref, inView } = useInView();
 
   useEffect(() => {
@@ -21,14 +21,6 @@ export default function WeddingPhotos() {
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setPhotos(data); })
       .catch(() => {});
-  }, []);
-
-  const closeLightbox = useCallback(() => {
-    setClosing(true);
-    setTimeout(() => {
-      setLightbox(null);
-      setClosing(false);
-    }, 300);
   }, []);
 
   return (
@@ -77,28 +69,12 @@ export default function WeddingPhotos() {
       </div>
 
       {lightbox !== null && photos[lightbox] && (
-        <div
-          className={`fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 ${
-            closing ? "opacity-0 transition-opacity duration-300" : "lightbox-backdrop"
-          }`}
-          onClick={closeLightbox}
-        >
-          <button
-            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors"
-            onClick={closeLightbox}
-          >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <img
-            src={photos[lightbox].url}
-            alt={photos[lightbox].alt}
-            className={`max-w-4xl max-h-[85vh] w-auto h-auto object-contain ${
-              closing ? "opacity-0 scale-95 transition-all duration-300" : "lightbox-content"
-            }`}
-          />
-        </div>
+        <Lightbox
+          photos={photos}
+          index={lightbox}
+          onClose={() => setLightbox(null)}
+          onChangeIndex={setLightbox}
+        />
       )}
     </section>
   );

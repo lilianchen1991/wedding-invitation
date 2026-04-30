@@ -6,20 +6,36 @@ import { saveFile, deleteFile } from "@/lib/upload";
 export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 
+const SENSITIVE_KEYS = new Set(["admin_password_hash", "jwt_secret"]);
+
 export async function GET(request: NextRequest) {
   const key = request.nextUrl.searchParams.get("key");
   const db = getDb();
 
   if (key) {
-    const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(key) as
-      | { value: string }
-      | undefined;
-    return NextResponse.json({ value: row?.value ?? null });
+    const keys = key.split(",").map((k) => k.trim()).filter(Boolean);
+    if (keys.length === 1) {
+      if (SENSITIVE_KEYS.has(keys[0])) {
+        return NextResponse.json({ value: null });
+      }
+      const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(keys[0]) as
+        | { value: string }
+        | undefined;
+      return NextResponse.json({ value: row?.value ?? null });
+    }
+    const placeholders = keys.map(() => "?").join(",");
+    const rows = db.prepare(`SELECT key, value FROM settings WHERE key IN (${placeholders})`).all(...keys) as { key: string; value: string }[];
+    const result = rows.filter((r) => !SENSITIVE_KEYS.has(r.key));
+    return NextResponse.json(result);
   }
 
   const rows = db.prepare("SELECT key, value FROM settings").all() as { key: string; value: string }[];
   const settings: Record<string, string> = {};
-  for (const row of rows) settings[row.key] = row.value;
+  for (const row of rows) {
+    if (!SENSITIVE_KEYS.has(row.key)) {
+      settings[row.key] = row.value;
+    }
+  }
   return NextResponse.json(settings);
 }
 

@@ -6,7 +6,6 @@ interface RsvpEntry {
   id: number;
   name: string;
   phone: string;
-  attending: string;
   guests: number;
   created_at: string;
 }
@@ -14,22 +13,26 @@ interface RsvpEntry {
 export default function AdminRsvp() {
   const [list, setList] = useState<RsvpEntry[]>([]);
 
-  useEffect(() => {
+  useEffect(() => { load(); }, []);
+
+  const load = () => {
     fetch("/api/rsvp")
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setList(data); });
-  }, []);
+  };
 
-  const attending = list.filter((r) => r.attending === "yes");
-  const totalGuests = attending.reduce((sum, r) => sum + r.guests, 0);
+  const totalGuests = list.reduce((sum, r) => sum + r.guests, 0);
+
+  const handleDelete = async (id: number, name: string) => {
+    if (!confirm(`确定删除「${name}」的回复？`)) return;
+    const res = await fetch(`/api/rsvp?id=${id}`, { method: "DELETE" });
+    if (res.ok) load();
+  };
 
   const exportCsv = () => {
-    const header = "姓名,电话,是否出席,人数,提交时间\n";
+    const header = "姓名,电话,人数,提交时间\n";
     const rows = list
-      .map(
-        (r) =>
-          `${r.name},${r.phone},${r.attending === "yes" ? "出席" : "不出席"},${r.guests},${r.created_at}`
-      )
+      .map((r) => `${r.name},${r.phone},${r.guests},${new Date(r.created_at.endsWith("Z") ? r.created_at : r.created_at + "Z").toLocaleString("zh-CN")}`)
       .join("\n");
 
     const blob = new Blob(["﻿" + header + rows], { type: "text/csv;charset=utf-8" });
@@ -47,7 +50,7 @@ export default function AdminRsvp() {
         <div>
           <h1 className="font-serif text-2xl text-primary">RSVP 回复</h1>
           <p className="text-sm text-text-light mt-1">
-            共 {list.length} 条回复，{attending.length} 人确认出席，预计 {totalGuests} 人到场
+            共 {list.length} 条回复，预计 {totalGuests} 人到场
           </p>
         </div>
         {list.length > 0 && (
@@ -71,9 +74,9 @@ export default function AdminRsvp() {
               <tr className="border-b border-border text-left">
                 <th className="px-4 py-3 text-text-light font-normal">姓名</th>
                 <th className="px-4 py-3 text-text-light font-normal">电话</th>
-                <th className="px-4 py-3 text-text-light font-normal">出席</th>
                 <th className="px-4 py-3 text-text-light font-normal">人数</th>
                 <th className="px-4 py-3 text-text-light font-normal">时间</th>
+                <th className="px-4 py-3 text-text-light font-normal">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -81,20 +84,17 @@ export default function AdminRsvp() {
                 <tr key={r.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3 text-primary">{r.name}</td>
                   <td className="px-4 py-3 text-text-light">{r.phone || "-"}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 ${
-                        r.attending === "yes"
-                          ? "bg-green-50 text-green-600"
-                          : "bg-red-50 text-red-500"
-                      }`}
-                    >
-                      {r.attending === "yes" ? "出席" : "不出席"}
-                    </span>
-                  </td>
                   <td className="px-4 py-3 text-text-light">{r.guests}</td>
                   <td className="px-4 py-3 text-text-light text-xs">
-                    {new Date(r.created_at).toLocaleString("zh-CN")}
+                    {new Date(r.created_at.endsWith("Z") ? r.created_at : r.created_at + "Z").toLocaleString("zh-CN")}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleDelete(r.id, r.name)}
+                      className="text-xs text-text-light hover:text-red-500 transition-colors"
+                    >
+                      删除
+                    </button>
                   </td>
                 </tr>
               ))}

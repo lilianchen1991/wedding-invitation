@@ -37,7 +37,7 @@ function formatDuration(seconds: number): string {
 }
 
 function formatTime(iso: string): string {
-  const d = new Date(iso);
+  const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const hour = String(d.getHours()).padStart(2, "0");
