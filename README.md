@@ -4,6 +4,37 @@
 
 基于 Next.js 15 + SQLite 构建，支持一键部署到自有服务器，所有内容均可通过后台动态配置。
 
+## 预览截图
+
+### 前台展示
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/front-hero.png" width="200" /><br/><b>首页 & 倒计时</b></td>
+    <td align="center"><img src="docs/screenshots/front-timeline.png" width="200" /><br/><b>甜蜜瞬间</b></td>
+    <td align="center"><img src="docs/screenshots/front-ceremony.png" width="200" /><br/><b>婚礼仪式 & 地图</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/front-rsvp.png" width="200" /><br/><b>RSVP 出席确认</b></td>
+    <td align="center"><img src="docs/screenshots/front-map.png" width="200" /><br/><b>祝福留言 & 点亮地图</b></td>
+    <td align="center"><img src="docs/screenshots/front-guestbook.png" width="200" /><br/><b>留言墙 & 红包</b></td>
+  </tr>
+</table>
+
+### 后台管理
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/admin-wedding-info.png" width="400" /><br/><b>婚礼信息配置</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/admin-milestones.png" width="400" /><br/><b>故事时间轴管理</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/admin-rsvp.png" width="400" /><br/><b>RSVP 回复列表</b></td>
+  </tr>
+</table>
+
 ## 功能特性
 
 ### 前台展示
