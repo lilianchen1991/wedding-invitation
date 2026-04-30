@@ -220,6 +220,12 @@ rsync -avz user@server:/path/to/wedding/public/uploads/ ./backup/uploads/
 - 高德地图 Key 需在[高德开放平台](https://lbs.amap.com/)申请 Web 服务类型
 - `data.db` 和 `public/uploads/` 是核心数据，务必定期备份
 
+## 打赏支持
+
+系统设计不易，若对你有帮助，随缘打赏鼓励
+
+<img src="docs/wechat-dev.jpg" width="200" />
+
 ## 开发者
 
 李连宸 ([@lilianchen1991](https://github.com/lilianchen1991))
